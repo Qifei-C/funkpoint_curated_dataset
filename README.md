@@ -4,7 +4,7 @@ This dataset was materialized from `labels.csv` using the curated split in `fews
 
 - References per action: 2
 - Tests per category: 4
-- Selection policy: For each (action, category), keep only samples whose p1->p5 direction has |dx|/sqrt(dx^2+dy^2) >= 0.6; then choose the best left/right-consistent sign cluster under that filter, rank samples by annotation difficulty, template fit, and mirror margin, and pick 4 tests per category plus 2 non-overlapping references from the easiest/stablest categories.
+- Selection policy: For each (action, category), rank samples by annotation difficulty, template fit, and mirror margin, and pick 4 tests per category plus 2 non-overlapping references from the easiest/stablest categories.
 
 ## Layout
 
@@ -19,8 +19,7 @@ This dataset was materialized from `labels.csv` using the curated split in `fews
 
 ## Orientation
 
-- Selected samples are horizontally reflected when needed so `p1` lies to the left of `p5`.
-- This makes the keypoint chain point in a consistent left-to-right direction across clean images, overlays, and CSV coordinates.
+- Selected keypoint chain point in a consistent left-to-right direction across clean images, overlays, and CSV coordinates.
 
 ## Actions
 
