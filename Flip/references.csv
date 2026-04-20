@@ -1,0 +1,3 @@
+action,action_slug,role,rank,object_category,wnid,difficulty,difficulty_rank,source_image_path,dataset_image_path,dominant_cluster_ratio,fit_distance,mirror_margin,was_reflected,p1_x,p1_y,p2_x,p2_y,p3_x,p3_y,p4_x,p4_y,p5_x,p5_y
+Flip,Flip,reference,1,spoon,n04284002,easy,0,images/n04284002/0016.JPEG,Flip/references/01__spoon__0016.JPEG,0.4343,0.010222,0.024832,0,0.0984375,0.08541666666666667,0.2984375,0.28125,0.1734375,0.19166666666666668,0.4390625,0.43125,0.7953125,0.6708333333333333
+Flip,Flip,reference,2,tablefork,n04380255,easy,0,images/n04380255/0022.jpg,Flip/references/02__tablefork__0022.jpg,0.4848,0.006743,0.028601,0,0.08125,0.14166666666666666,0.3265625,0.3875,0.171875,0.2625,0.55625,0.55,0.8734375,0.7916666666666666

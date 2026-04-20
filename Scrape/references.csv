@@ -1,0 +1,3 @@
+action,action_slug,role,rank,object_category,wnid,difficulty,difficulty_rank,source_image_path,dataset_image_path,dominant_cluster_ratio,fit_distance,mirror_margin,was_reflected,p1_x,p1_y,p2_x,p2_y,p3_x,p3_y,p4_x,p4_y,p5_x,p5_y
+Scrape,Scrape,reference,1,spatula,n04269944,easy,0,images/n04269944/0049.png,Scrape/references/01__spatula__0049.png,0.44,0.065241,0.166276,1,0.15000000000000002,0.38125,0.2734375,0.45416666666666666,0.19687500000000002,0.4166666666666667,0.534375,0.475,0.76875,0.6
+Scrape,Scrape,reference,2,scraper,n04150980,easy,0,images/n04150980/0019.png,Scrape/references/02__scraper__0019.png,0.4304,0.040527,1.764622,0,0.1390625,0.275,0.096875,0.5854166666666667,0.103125,0.4125,0.4796875,0.45625,0.81875,0.48125
