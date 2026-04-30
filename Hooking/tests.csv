@@ -1,0 +1,11 @@
+action,action_slug,role,rank,object_category,wnid,difficulty,difficulty_rank,source_image_path,dataset_image_path,dominant_cluster_ratio,fit_distance,mirror_margin,was_reflected,p1_x,p1_y,p2_x,p2_y,p3_x,p3_y
+Hooking,Hooking,test,1,test1,,manual,,Hooking/tests/test1.png,Hooking/tests/test1.png,,,,0,0.59173553719,0.210526315789,0.672727272727,0.0723684210526,0.647933884298,0.094298245614
+Hooking,Hooking,test,2,test2,,manual,,Hooking/tests/test2.png,Hooking/tests/test2.png,,,,0,0.497520661157,0.234649122807,0.629752066116,0.304824561404,0.532231404959,0.293859649123
+Hooking,Hooking,test,3,test3,,manual,,Hooking/tests/test3.png,Hooking/tests/test3.png,,,,0,0.659504132231,0.125,0.24958677686,0.561403508772,0.727272727273,0.138157894737
+Hooking,Hooking,test,4,test4,,manual,,Hooking/tests/test4.png,Hooking/tests/test4.png,,,,0,0.323966942149,0.302631578947,0.628099173554,0.743421052632,0.335537190083,0.287280701754
+Hooking,Hooking,test,5,test5,,manual,,Hooking/tests/test5.png,Hooking/tests/test5.png,,,,0,0.585123966942,0.151315789474,0.472727272727,0.18201754386,0.557024793388,0.203947368421
+Hooking,Hooking,test,6,test6,,manual,,Hooking/tests/test6.png,Hooking/tests/test6.png,,,,0,0.447933884298,0.322368421053,0.63305785124,0.304824561404,0.557024793388,0.287280701754
+Hooking,Hooking,test,7,test7,,manual,,Hooking/tests/test7.png,Hooking/tests/test7.png,,,,0,0.480991735537,0.247807017544,0.409917355372,0.214912280702,0.456198347107,0.219298245614
+Hooking,Hooking,test,8,test8,,manual,,Hooking/tests/test8.png,Hooking/tests/test8.png,,,,0,0.563636363636,0.383771929825,0.6,0.105263157895,0.576859504132,0.0899122807018
+Hooking,Hooking,test,9,test9,,manual,,Hooking/tests/test9.png,Hooking/tests/test9.png,,,,0,0.345454545455,0.0392156862745,0.533884297521,0.100217864924,0.365289256198,0.0631808278867
+Hooking,Hooking,test,10,test10,,manual,,Hooking/tests/test10.png,Hooking/tests/test10.png,,,,0,0.573553719008,0.276548672566,0.639669421488,0.285398230088,0.618181818182,0.243362831858
