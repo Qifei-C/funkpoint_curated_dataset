@@ -1,0 +1,377 @@
+{
+  "action": "Dagging",
+  "action_slug": "Dagging",
+  "images": [
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "reference",
+      "rank": "1",
+      "object_category": "ref1",
+      "annotation_id": "Dagging/references/ref1",
+      "dataset_image_path": "Dagging/references/ref1.png",
+      "captions": [
+        "insert the steel straw at the left to the right steel cup."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "reference",
+      "rank": "1",
+      "object_category": "ref1",
+      "annotation_id": "Dagging/references/ref1.png",
+      "dataset_image_path": "Dagging/references/ref1.png",
+      "captions": [
+        "insert the steel straw at the left to the right steel cup."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "reference",
+      "rank": "2",
+      "object_category": "ref2",
+      "annotation_id": "Dagging/references/ref2",
+      "dataset_image_path": "Dagging/references/ref2.png",
+      "captions": [
+        "Mate the white power plug into the upper slot of the wall-mounted electrical outlet."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "reference",
+      "rank": "2",
+      "object_category": "ref2",
+      "annotation_id": "Dagging/references/ref2.png",
+      "dataset_image_path": "Dagging/references/ref2.png",
+      "captions": [
+        "Mate the white power plug into the upper slot of the wall-mounted electrical outlet."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "1",
+      "object_category": "test1_01",
+      "annotation_id": "Dagging/tests/context_vqa/test1_01",
+      "dataset_image_path": "Dagging/tests/context_vqa/test1_01.png",
+      "captions": [
+        "I've finished cutting the bread and want to put knife back to the holder.",
+        "Put the knife back to the top middle of the knife storage block."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "1",
+      "object_category": "test1_02",
+      "annotation_id": "Dagging/tests/context_vqa/test1_02",
+      "dataset_image_path": "Dagging/tests/context_vqa/test1_02.png",
+      "captions": [
+        "I want to take a knife, dip it in some chocolate sauce, and spread it on the bread.",
+        "I’m going to put some chocolate spread on my bread.",
+        "Stick the knife into the chocolate sauce."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "2",
+      "object_category": "test2_01",
+      "annotation_id": "Dagging/tests/context_vqa/test2_01",
+      "dataset_image_path": "Dagging/tests/context_vqa/test2_01.png",
+      "captions": [
+        "I want to close the door.",
+        "Use index finger tip to press the center of close button."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "2",
+      "object_category": "test2_02",
+      "annotation_id": "Dagging/tests/context_vqa/test2_02",
+      "dataset_image_path": "Dagging/tests/context_vqa/test2_02.png",
+      "captions": [
+        "I want to open the door.",
+        "Press the open button with index finger."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "3",
+      "object_category": "test3_01",
+      "annotation_id": "Dagging/tests/context_vqa/test3_01",
+      "dataset_image_path": "Dagging/tests/context_vqa/test3_01.png",
+      "captions": [
+        "I want to go to my apartment at 0710.",
+        "Press button of floor 7 using index finger."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "3",
+      "object_category": "test3_02",
+      "annotation_id": "Dagging/tests/context_vqa/test3_02",
+      "dataset_image_path": "Dagging/tests/context_vqa/test3_02.png",
+      "captions": [
+        "I'm going to leave the building to go to work.",
+        "I'm going to the lobby.",
+        "Press the lobby level using index finger."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "4",
+      "object_category": "test4_01",
+      "annotation_id": "Dagging/tests/context_vqa/test4_01",
+      "dataset_image_path": "Dagging/tests/context_vqa/test4_01.png",
+      "captions": [
+        "Insert the white toliet brush at the base of the toilet bowl to clean the trapway.",
+        "I start clean the trapway of the toilet."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "4",
+      "object_category": "test4_02",
+      "annotation_id": "Dagging/tests/context_vqa/test4_02",
+      "dataset_image_path": "Dagging/tests/context_vqa/test4_02.png",
+      "captions": [
+        "I finished cleaning the toilet.",
+        "I want to place the tool back.",
+        "Place the white brush back to the pink brush holder on the right."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "5",
+      "object_category": "test5_01",
+      "annotation_id": "Dagging/tests/context_vqa/test5_01",
+      "dataset_image_path": "Dagging/tests/context_vqa/test5_01.png",
+      "captions": [
+        "Mate the white power plug into the upper slot of the wall-mounted electrical outlet."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "5",
+      "object_category": "test5_02",
+      "annotation_id": "Dagging/tests/context_vqa/test5_02",
+      "dataset_image_path": "Dagging/tests/context_vqa/test5_02.png",
+      "captions": [
+        "Mate the white power plug into the bottom slot of the wall-mounted electrical outlet."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "1",
+      "object_category": "test1",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test1.png",
+      "captions": [
+        "press the power button of the coffee machine using the tip of the index finger."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "2",
+      "object_category": "test2",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test2.png",
+      "captions": [
+        "press the close button of the elevator using the tip of the index finger."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "3",
+      "object_category": "test3",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test3.png",
+      "captions": [
+        "pierce the silicon center of the steel lip of the white cup using the bottom of the metal straw."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "4",
+      "object_category": "test4",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test4.png",
+      "captions": [
+        "pierce the lip of the refresher with the bottom end of the paper straw on the left."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "5",
+      "object_category": "test5",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test5.png",
+      "captions": [
+        "Mate the white adapter into the left slot of the library desktop electrical outlet."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "6",
+      "object_category": "test6",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test6.png",
+      "captions": [
+        "Mate the black u-disk to the usb-a port of the black PC on the right."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "7",
+      "object_category": "test7",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test7.png",
+      "captions": [
+        "Insert the black rubber cup drain opening at the base of the toilet bowl."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "8",
+      "object_category": "test8",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test8.png",
+      "captions": [
+        "Insert the white bristles of the dish brush into the bottom of the ceramic mug to scrub the interior surface."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "9",
+      "object_category": "test9",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test9.png",
+      "captions": [
+        "pierce the top of the grape using the bottom of the left toothsticks."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "10",
+      "object_category": "test10",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test10.png",
+      "captions": [
+        "pierce the cut pineable from the bottom with the sharp edge of wood stick on the right."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "11",
+      "object_category": "test11",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test11.png",
+      "captions": [
+        "Insert the red kitchen scissors back to the knife block at the right."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "12",
+      "object_category": "test12",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test12.png",
+      "captions": [
+        "Insert the ethernet cable plugger to the PC."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "13",
+      "object_category": "test13",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test13.png",
+      "captions": [
+        "press the close button of the elevator using the tip of the index finger."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "14",
+      "object_category": "test14",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test14.png",
+      "captions": [
+        "Insert the black toliet brush at the base of the toilet bowl."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "15",
+      "object_category": "test15",
+      "annotation_id": "",
+      "dataset_image_path": "Dagging/tests/test15.png",
+      "captions": [
+        "insert the orange straw to the drink on the left."
+      ]
+    },
+    {
+      "action": "Dagging",
+      "action_slug": "Dagging",
+      "role": "test",
+      "rank": "16",
+      "object_category": "test16",
+      "annotation_id": "Dagging/tests/test16",
+      "dataset_image_path": "Dagging/tests/test16.png",
+      "captions": [
+        "Place the white brush back to the brush holder."
+      ]
+    }
+  ]
+}

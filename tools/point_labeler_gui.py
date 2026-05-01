@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import colorsys
 import csv
+import json
 import re
 import sys
 from pathlib import Path
@@ -61,6 +62,7 @@ STATIC_LABEL_HEADER = [
     "difficulty_rank",
     "source_image_path",
     "dataset_image_path",
+    "annotation_id",
     "dominant_cluster_ratio",
     "fit_distance",
     "mirror_margin",
@@ -104,11 +106,13 @@ VGM_HEADER = [
     "action",
     "action_slug",
     "reference_rank",
+    "reference_annotation_id",
     "reference_object_category",
     "reference_source_image_path",
     "reference_dataset_image_path",
     "reference_overlay_image_path",
     "test_rank",
+    "test_annotation_id",
     "test_object_category",
     "test_source_image_path",
     "test_dataset_image_path",
@@ -132,8 +136,9 @@ CAPTION_KEYS = [
     "role",
     "rank",
     "object_category",
+    "annotation_id",
     "dataset_image_path",
-    "caption",
+    "captions",
 ]
 
 ACTION_NAME_OVERRIDES = {
@@ -169,10 +174,10 @@ def list_image_files(folder: Path) -> list[Path]:
     return sorted(
         (
             path
-            for path in folder.iterdir()
+            for path in folder.rglob("*")
             if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
         ),
-        key=lambda path: natural_sort_key(path.name),
+        key=lambda path: natural_sort_key(path.relative_to(folder).as_posix()),
     )
 
 
@@ -290,17 +295,87 @@ def yaml_unquote(value: str) -> str:
     return value
 
 
+def captions_from_text(text: str) -> list[str]:
+    return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def caption_text_from_captions(captions: object) -> str:
+    return "\n".join(normalize_captions(captions))
+
+
+def normalize_captions(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str):
+        return captions_from_text(value)
+    return []
+
+
+def normalize_caption_entry(entry: dict[str, object]) -> dict[str, object]:
+    captions = normalize_captions(entry.get("captions", []))
+    if not captions:
+        captions = normalize_captions(entry.get("caption", ""))
+    return {
+        "action": str(entry.get("action", "")),
+        "action_slug": str(entry.get("action_slug", "")),
+        "role": str(entry.get("role", "")),
+        "rank": str(entry.get("rank", "")),
+        "object_category": str(entry.get("object_category", "")),
+        "annotation_id": str(entry.get("annotation_id", "")),
+        "dataset_image_path": str(entry.get("dataset_image_path", "")),
+        "captions": captions,
+    }
+
+
+def annotation_id_for_path(dataset_root: Path, path: Path) -> str:
+    relative_path = dataset_relative_path(dataset_root, path)
+    return str(Path(relative_path).with_suffix("")).replace("\\", "/")
+
+
+def annotation_key(row: dict[str, str]) -> str:
+    return row.get("annotation_id") or row.get("dataset_image_path", "")
+
+
+def same_annotation(left: dict[str, str], right: dict[str, str]) -> bool:
+    left_annotation_id = left.get("annotation_id", "")
+    right_annotation_id = right.get("annotation_id", "")
+    if left_annotation_id and right_annotation_id:
+        return left_annotation_id == right_annotation_id
+    return left.get("dataset_image_path", "") == right.get("dataset_image_path", "")
+
+
 def caption_yaml_path(dataset_root: Path, action_slug: str) -> Path:
     return dataset_root / action_slug / "caption.yaml"
 
 
-def read_caption_entries(path: Path) -> list[dict[str, str]]:
-    """Read the simple caption.yaml format produced by this tool."""
+def caption_json_path(dataset_root: Path, action_slug: str) -> Path:
+    return dataset_root / action_slug / "caption.json"
+
+
+def caption_entries_for_action(dataset_root: Path, action_slug: str) -> list[dict[str, object]]:
+    json_path = caption_json_path(dataset_root, action_slug)
+    if json_path.exists():
+        return read_caption_entries(json_path)
+    return read_caption_entries(caption_yaml_path(dataset_root, action_slug))
+
+
+def read_caption_entries(path: Path) -> list[dict[str, object]]:
+    """Read caption manifests. JSON is native; YAML is legacy fallback."""
     if not path.exists():
         return []
 
-    entries: list[dict[str, str]] = []
-    current: dict[str, str] | None = None
+    if path.suffix.lower() == ".json":
+        with path.open(encoding="utf-8") as handle:
+            payload = json.load(handle)
+        images = payload.get("images", []) if isinstance(payload, dict) else []
+        return [
+            normalize_caption_entry(entry)
+            for entry in images
+            if isinstance(entry, dict)
+        ]
+
+    entries: list[dict[str, object]] = []
+    current: dict[str, object] | None = None
     for raw_line in path.read_text(encoding="utf-8").splitlines():
         if not raw_line.startswith("  - ") and not raw_line.startswith("    "):
             continue
@@ -308,7 +383,7 @@ def read_caption_entries(path: Path) -> list[dict[str, str]]:
         line = raw_line.strip()
         if line.startswith("- "):
             if current is not None:
-                entries.append({key: current.get(key, "") for key in CAPTION_KEYS})
+                entries.append(normalize_caption_entry(current))
             current = {key: "" for key in CAPTION_KEYS}
             line = line[2:]
 
@@ -317,19 +392,40 @@ def read_caption_entries(path: Path) -> list[dict[str, str]]:
 
         key, value = line.split(":", 1)
         key = key.strip()
-        if key in CAPTION_KEYS:
+        if key == "caption":
+            current["captions"] = [yaml_unquote(value)]
+        elif key in CAPTION_KEYS:
             current[key] = yaml_unquote(value)
 
     if current is not None:
-        entries.append({key: current.get(key, "") for key in CAPTION_KEYS})
+        entries.append(normalize_caption_entry(current))
     return entries
 
 
-def write_caption_yaml(path: Path, action_slug: str, entries: list[dict[str, str]]) -> None:
-    """Write image captions as an action-level YAML manifest."""
-    normalized = [{key: entry.get(key, "") for key in CAPTION_KEYS} for entry in entries]
+def write_caption_json(path: Path, action_slug: str, entries: list[dict[str, object]]) -> None:
+    """Write image captions as an action-level JSON manifest."""
+    normalized = [normalize_caption_entry(entry) for entry in entries]
     action_name = next(
-        (entry["action"] for entry in normalized if entry.get("action")),
+        (str(entry["action"]) for entry in normalized if entry.get("action")),
+        ACTION_NAME_OVERRIDES.get(action_slug, action_slug.replace("_", " ")),
+    )
+    payload = {
+        "action": action_name,
+        "action_slug": action_slug,
+        "images": sorted(normalized, key=lambda item: natural_sort_key(annotation_key(item))),
+    }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, ensure_ascii=False)
+        handle.write("\n")
+
+
+def write_caption_yaml(path: Path, action_slug: str, entries: list[dict[str, object]]) -> None:
+    """Write legacy YAML captions. New saves should use write_caption_json."""
+    normalized = [normalize_caption_entry(entry) for entry in entries]
+    action_name = next(
+        (str(entry["action"]) for entry in normalized if entry.get("action")),
         ACTION_NAME_OVERRIDES.get(action_slug, action_slug.replace("_", " ")),
     )
 
@@ -338,70 +434,104 @@ def write_caption_yaml(path: Path, action_slug: str, entries: list[dict[str, str
         f"action_slug: {yaml_quote(action_slug)}",
         "images:",
     ]
-    for entry in sorted(normalized, key=lambda item: item.get("dataset_image_path", "")):
+    for entry in sorted(normalized, key=lambda item: annotation_key(item)):
         lines.append(f"  - dataset_image_path: {yaml_quote(entry['dataset_image_path'])}")
         for key in CAPTION_KEYS:
             if key == "dataset_image_path":
                 continue
-            lines.append(f"    {key}: {yaml_quote(entry.get(key, ''))}")
+            if key == "captions":
+                lines.append(
+                    f"    caption: {yaml_quote(caption_text_from_captions(entry.get(key, [])))}"
+                )
+            else:
+                lines.append(f"    {key}: {yaml_quote(str(entry.get(key, '')))}")
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def upsert_caption_entries(
-    entries: list[dict[str, str]],
-    replacements: list[dict[str, str]],
-) -> list[dict[str, str]]:
-    """Insert or replace caption entries by dataset_image_path."""
-    by_path = {
-        entry.get("dataset_image_path", ""): {key: entry.get(key, "") for key in CAPTION_KEYS}
+    entries: list[dict[str, object]],
+    replacements: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Insert or replace caption entries by annotation_id, falling back to image path."""
+    by_key = {
+        annotation_key(entry): normalize_caption_entry(entry)
         for entry in entries
-        if entry.get("dataset_image_path")
+        if annotation_key(entry)
     }
     for replacement in replacements:
-        dataset_image_path_value = replacement.get("dataset_image_path", "")
-        if not dataset_image_path_value:
+        entry_key = annotation_key(replacement)
+        if not entry_key:
             continue
-        by_path[dataset_image_path_value] = {
-            key: replacement.get(key, "") for key in CAPTION_KEYS
-        }
-    return [by_path[key] for key in sorted(by_path)]
+        by_key[entry_key] = normalize_caption_entry(replacement)
+    return [by_key[key] for key in sorted(by_key, key=natural_sort_key)]
 
 
-def caption_entry_from_label_row(row: dict[str, str], caption: str) -> dict[str, str]:
+def caption_entry_from_label_row(
+    row: dict[str, str],
+    captions: object,
+) -> dict[str, object]:
     return {
         "action": row.get("action", ""),
         "action_slug": row.get("action_slug", ""),
         "role": row.get("role", ""),
         "rank": row.get("rank", ""),
         "object_category": row.get("object_category", ""),
+        "annotation_id": annotation_key(row),
         "dataset_image_path": row.get("dataset_image_path", ""),
-        "caption": caption.strip(),
+        "captions": normalize_captions(captions),
     }
 
 
 def save_caption_entries(
     dataset_root: Path,
     action_slug: str,
-    replacements: list[dict[str, str]],
+    replacements: list[dict[str, object]],
 ) -> int:
-    path = caption_yaml_path(dataset_root, action_slug)
-    entries = upsert_caption_entries(read_caption_entries(path), replacements)
-    write_caption_yaml(path, action_slug, entries)
+    path = caption_json_path(dataset_root, action_slug)
+    entries = upsert_caption_entries(caption_entries_for_action(dataset_root, action_slug), replacements)
+    write_caption_json(path, action_slug, entries)
     return len(entries)
 
 
-def caption_by_dataset_path(path: Path, dataset_image_path_value: str) -> str:
-    for entry in read_caption_entries(path):
-        if entry.get("dataset_image_path") == dataset_image_path_value:
-            return entry.get("caption", "")
+def caption_for_annotation(
+    entries_or_path: list[dict[str, object]] | Path,
+    dataset_image_path_value: str,
+    annotation_id: str = "",
+) -> str:
+    entries = (
+        read_caption_entries(entries_or_path)
+        if isinstance(entries_or_path, Path)
+        else entries_or_path
+    )
+    for entry in entries:
+        if annotation_id and entry.get("annotation_id") == annotation_id:
+            return caption_text_from_captions(entry.get("captions", []))
+        if not entry.get("annotation_id") and entry.get("dataset_image_path") == dataset_image_path_value:
+            return caption_text_from_captions(entry.get("captions", []))
     return ""
+
+
+def caption_by_dataset_path(path: Path, dataset_image_path_value: str) -> str:
+    return caption_for_annotation(path, dataset_image_path_value)
 
 
 def label_csv_path(dataset_root: Path, action_slug: str, role: Role) -> Path:
     filename = "references.csv" if role == "reference" else "tests.csv"
     return dataset_root / action_slug / filename
+
+
+def image_role_dir(dataset_root: Path, action_slug: str, role: Role) -> Path:
+    folder = "references" if role == "reference" else "tests"
+    return dataset_root / action_slug / folder
+
+
+def image_display_label(image_root: Path, image_path: Path) -> str:
+    try:
+        return image_path.relative_to(image_root).as_posix()
+    except ValueError:
+        return image_path.name
 
 
 def action_display_name(dataset_root: Path, action_slug: str) -> str:
@@ -424,6 +554,12 @@ def parse_rank_and_category(image_path: Path, fallback_rank: int) -> tuple[int, 
     """Infer rank/object category from names like 01__spoon__0006.jpg."""
     match = re.match(r"^(?P<rank>\d+)__(?P<category>.+?)__(?P<rest>.+)$", image_path.stem)
     if not match:
+        context_match = re.match(
+            r"^(?P<prefix>[A-Za-z_]+)(?P<rank>\d+)(?:_(?P<context>\d+))$",
+            image_path.stem,
+        )
+        if context_match:
+            return int(context_match.group("rank")), image_path.stem
         trailing_digits = re.search(r"(?P<rank>\d+)$", image_path.stem)
         if trailing_digits:
             return int(trailing_digits.group("rank")), image_path.stem
@@ -452,6 +588,7 @@ def build_label_row(
     """Create or update one references/tests.csv row for a labeled image."""
     rank, object_category = parse_rank_and_category(image_path, fallback_rank)
     dataset_path = dataset_relative_path(dataset_root, image_path)
+    annotation_id = annotation_id_for_path(dataset_root, image_path)
     header = merge_headers(label_header(point_count), tuple(existing_row.keys()) if existing_row else ())
     base = {column: "" for column in header}
     if existing_row:
@@ -467,6 +604,7 @@ def build_label_row(
             "difficulty": base.get("difficulty") or "manual",
             "source_image_path": base.get("source_image_path") or dataset_path,
             "dataset_image_path": dataset_path,
+            "annotation_id": base.get("annotation_id") or annotation_id,
             "was_reflected": base.get("was_reflected") or "0",
         }
     )
@@ -487,15 +625,14 @@ def upsert_label_row(
     replacement: dict[str, str],
     header: list[str] | None = None,
 ) -> list[dict[str, str]]:
-    """Insert or replace a label row by dataset_image_path."""
+    """Insert or replace a label row by annotation_id, falling back to image path."""
     columns = merge_headers(header or LABEL_HEADER, tuple(replacement.keys()))
-    replacement_key = replacement.get("dataset_image_path")
     updated: list[dict[str, str]] = []
     replaced = False
 
     for row in rows:
         columns = merge_headers(columns, tuple(row.keys()))
-        if row.get("dataset_image_path") == replacement_key:
+        if same_annotation(row, replacement):
             merged = {column: row.get(column, "") for column in columns}
             merged.update({column: replacement.get(column, "") for column in columns})
             updated.append(merged)
@@ -510,10 +647,14 @@ def upsert_label_row(
 
 
 def find_label_row(
-    rows: list[dict[str, str]], dataset_image_path_value: str
+    rows: list[dict[str, str]],
+    dataset_image_path_value: str,
+    annotation_id: str = "",
 ) -> dict[str, str] | None:
     for row in rows:
-        if row.get("dataset_image_path") == dataset_image_path_value:
+        if annotation_id and row.get("annotation_id") == annotation_id:
+            return row
+        if not row.get("annotation_id") and row.get("dataset_image_path") == dataset_image_path_value:
             return row
     return None
 
@@ -592,11 +733,13 @@ def generate_vgm_rows(
                         "action": reference.get("action") or action_display_name(Path("."), action_slug),
                         "action_slug": action_slug,
                         "reference_rank": reference["rank"],
+                        "reference_annotation_id": annotation_key(reference),
                         "reference_object_category": reference["object_category"],
                         "reference_source_image_path": reference.get("source_image_path", ""),
                         "reference_dataset_image_path": reference["dataset_image_path"],
                         "reference_overlay_image_path": overlay_rel_path(reference, "reference"),
                         "test_rank": test["rank"],
+                        "test_annotation_id": annotation_key(test),
                         "test_object_category": test["object_category"],
                         "test_source_image_path": test.get("source_image_path", ""),
                         "test_dataset_image_path": test["dataset_image_path"],
@@ -832,13 +975,13 @@ class PointLabelerApp:
         captions.columnconfigure(0, weight=1)
         captions.columnconfigure(1, weight=1)
 
-        ttk.Label(captions, text="Reference caption").grid(
+        ttk.Label(captions, text="Reference captions, one per line").grid(
             row=0,
             column=0,
             sticky="w",
             padx=(0, 5),
         )
-        ttk.Label(captions, text="Test caption").grid(
+        ttk.Label(captions, text="Test captions, one per line").grid(
             row=0,
             column=1,
             sticky="w",
@@ -971,15 +1114,28 @@ class PointLabelerApp:
         else:
             self.point_count_var.set(infer_action_point_count(self.dataset_root, action_slug))
         self.point_spinbox.configure(to=self._point_count())
-        action_dir = self.dataset_root / action_slug
-        self.reference_images = list_image_files(action_dir / "references")
-        self.test_images = list_image_files(action_dir / "tests")
+        reference_root = image_role_dir(self.dataset_root, action_slug, "reference")
+        test_root = image_role_dir(self.dataset_root, action_slug, "test")
+        self.reference_images = list_image_files(reference_root)
+        self.test_images = list_image_files(test_root)
 
-        self.reference_combo["values"] = [path.name for path in self.reference_images]
-        self.test_combo["values"] = [path.name for path in self.test_images]
+        self.reference_combo["values"] = [
+            image_display_label(reference_root, path) for path in self.reference_images
+        ]
+        self.test_combo["values"] = [
+            image_display_label(test_root, path) for path in self.test_images
+        ]
 
-        self.reference_var.set(self.reference_images[0].name if self.reference_images else "")
-        self.test_var.set(self.test_images[0].name if self.test_images else "")
+        self.reference_var.set(
+            image_display_label(reference_root, self.reference_images[0])
+            if self.reference_images
+            else ""
+        )
+        self.test_var.set(
+            image_display_label(test_root, self.test_images[0])
+            if self.test_images
+            else ""
+        )
         self._select_image("reference", self.reference_var.get())
         self._select_image("test", self.test_var.get())
         self._update_status()
@@ -994,7 +1150,15 @@ class PointLabelerApp:
 
     def _select_image(self, role: Role, filename: str) -> None:
         images = self.reference_images if role == "reference" else self.test_images
-        selected = next((path for path in images if path.name == filename), None)
+        image_root = image_role_dir(self.dataset_root, self.action_var.get(), role)
+        selected = next(
+            (
+                path
+                for path in images
+                if image_display_label(image_root, path) == filename
+            ),
+            None,
+        )
         self.current_paths[role] = selected
         self.points[role] = {}
 
@@ -1005,10 +1169,15 @@ class PointLabelerApp:
                 label_header(point_count),
             )
             dataset_path = dataset_relative_path(self.dataset_root, selected)
-            self.points[role] = points_from_row(find_label_row(rows, dataset_path), point_count)
-            caption = caption_by_dataset_path(
-                caption_yaml_path(self.dataset_root, self.action_var.get()),
+            annotation_id = annotation_id_for_path(self.dataset_root, selected)
+            self.points[role] = points_from_row(
+                find_label_row(rows, dataset_path, annotation_id),
+                point_count,
+            )
+            caption = caption_for_annotation(
+                caption_entries_for_action(self.dataset_root, self.action_var.get()),
                 dataset_path,
+                annotation_id,
             )
             self._set_caption_text(role, caption)
         else:
@@ -1169,7 +1338,8 @@ class PointLabelerApp:
                 label_header(point_count),
             )
             dataset_path = dataset_relative_path(self.dataset_root, image_path)
-            existing = find_label_row(rows, dataset_path)
+            annotation_id = annotation_id_for_path(self.dataset_root, image_path)
+            existing = find_label_row(rows, dataset_path, annotation_id)
             fallback_rank = self._fallback_rank(role, image_path)
             replacement = build_label_row(
                 dataset_root=self.dataset_root,
@@ -1238,7 +1408,8 @@ class PointLabelerApp:
             label_header(point_count),
         )
         dataset_path = dataset_relative_path(self.dataset_root, image_path)
-        row = find_label_row(rows, dataset_path)
+        annotation_id = annotation_id_for_path(self.dataset_root, image_path)
+        row = find_label_row(rows, dataset_path, annotation_id)
         if row is None:
             row = build_label_row(
                 dataset_root=self.dataset_root,

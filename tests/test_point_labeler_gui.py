@@ -33,6 +33,33 @@ class PointLabelerDataTests(unittest.TestCase):
             point_labeler_gui.parse_rank_and_category(Path("ref2.png"), fallback_rank=9),
             (2, "ref2"),
         )
+        self.assertEqual(
+            point_labeler_gui.parse_rank_and_category(
+                Path("context_vqa/test1_02.png"),
+                fallback_rank=9,
+            ),
+            (1, "test1_02"),
+        )
+
+    def test_list_image_files_includes_nested_context_vqa_images(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "tests" / "context_vqa").mkdir(parents=True)
+            (root / "tests" / "test2.png").touch()
+            (root / "tests" / "context_vqa" / "test1_02.png").touch()
+            (root / "tests" / "context_vqa" / "test1_01.png").touch()
+
+            self.assertEqual(
+                [
+                    path.relative_to(root / "tests").as_posix()
+                    for path in point_labeler_gui.list_image_files(root / "tests")
+                ],
+                [
+                    "context_vqa/test1_01.png",
+                    "context_vqa/test1_02.png",
+                    "test2.png",
+                ],
+            )
 
     def test_image_metadata_uses_filename_convention(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -118,6 +145,31 @@ class PointLabelerDataTests(unittest.TestCase):
         self.assertEqual(updated[0]["difficulty"], "manual")
         self.assertEqual(updated[0]["p1_x"], "0.9")
         self.assertEqual(updated[0]["p1_y"], "0.8")
+
+    def test_upsert_row_keeps_same_image_context_annotations_separate(self) -> None:
+        existing = [
+            {
+                **{column: "" for column in point_labeler_gui.LABEL_HEADER},
+                "annotation_id": "Dagging/tests/context_vqa/test1_01",
+                "dataset_image_path": "Dagging/tests/test1.png",
+                "caption": "first",
+                "p1_x": "0.1",
+            }
+        ]
+        replacement = {
+            **{column: "" for column in point_labeler_gui.LABEL_HEADER},
+            "annotation_id": "Dagging/tests/context_vqa/test1_02",
+            "dataset_image_path": "Dagging/tests/test1.png",
+            "p1_x": "0.9",
+        }
+
+        updated = point_labeler_gui.upsert_label_row(existing, replacement)
+
+        self.assertEqual(len(updated), 2)
+        self.assertEqual(
+            [row["annotation_id"] for row in updated],
+            ["Dagging/tests/context_vqa/test1_01", "Dagging/tests/context_vqa/test1_02"],
+        )
 
     def test_generate_vgm_rows_expands_reference_test_points(self) -> None:
         reference = {
@@ -235,10 +287,10 @@ class PointLabelerDataTests(unittest.TestCase):
         self.assertEqual(rows[-1]["point_id"], "6")
         self.assertNotEqual(rows[-1]["point_color_rgb"], "")
 
-    def test_caption_yaml_round_trips_image_captions(self) -> None:
+    def test_caption_json_round_trips_multi_image_captions(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            caption_path = root / "Hooking" / "caption.yaml"
+            caption_path = root / "Hooking" / "caption.json"
             caption_path.parent.mkdir(parents=True)
             entries = [
                 {
@@ -247,8 +299,12 @@ class PointLabelerDataTests(unittest.TestCase):
                     "role": "reference",
                     "rank": "1",
                     "object_category": "hook",
+                    "annotation_id": "",
                     "dataset_image_path": "Hooking/references/01__hook__0001.png",
-                    "caption": "A hook catches the loop from the left side.",
+                    "captions": [
+                        "A hook catches the loop from the left side.",
+                        "The hook is aligned with the ring.",
+                    ],
                 },
                 {
                     "action": "Hooking",
@@ -256,18 +312,48 @@ class PointLabelerDataTests(unittest.TestCase):
                     "role": "test",
                     "rank": "1",
                     "object_category": "loop",
+                    "annotation_id": "",
                     "dataset_image_path": "Hooking/tests/01__loop__0002.png",
-                    "caption": "The tool hooks and pulls the loop.",
+                    "captions": ["The tool hooks and pulls the loop."],
                 },
             ]
 
-            point_labeler_gui.write_caption_yaml(caption_path, "Hooking", entries)
+            point_labeler_gui.write_caption_json(caption_path, "Hooking", entries)
             loaded = point_labeler_gui.read_caption_entries(caption_path)
 
             self.assertEqual(loaded, entries)
             text = caption_path.read_text(encoding="utf-8")
-            self.assertIn("images:", text)
-            self.assertIn("caption: 'The tool hooks and pulls the loop.'", text)
+            self.assertIn('"images"', text)
+            self.assertIn('"captions"', text)
+
+    def test_old_caption_yaml_reads_as_single_caption_list(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            caption_path = root / "Hooking" / "caption.yaml"
+            caption_path.parent.mkdir(parents=True)
+            caption_path.write_text(
+                "\n".join(
+                    [
+                        "action: 'Hooking'",
+                        "action_slug: 'Hooking'",
+                        "images:",
+                        "  - dataset_image_path: 'Hooking/tests/test1.png'",
+                        "    action: 'Hooking'",
+                        "    action_slug: 'Hooking'",
+                        "    role: 'test'",
+                        "    rank: '1'",
+                        "    object_category: 'test1'",
+                        "    annotation_id: ''",
+                        "    caption: 'The tool hooks the loop.'",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            entries = point_labeler_gui.read_caption_entries(caption_path)
+
+            self.assertEqual(entries[0]["captions"], ["The tool hooks the loop."])
 
     def test_upsert_caption_entries_replaces_by_dataset_path(self) -> None:
         entries = [
@@ -278,18 +364,56 @@ class PointLabelerDataTests(unittest.TestCase):
                 "rank": "1",
                 "object_category": "hook",
                 "dataset_image_path": "Hooking/references/01__hook__0001.png",
-                "caption": "old caption",
+                "captions": ["old caption"],
             }
         ]
         replacement = {
             **entries[0],
-            "caption": "new caption",
+            "captions": ["new caption", "alternate caption"],
         }
 
         updated = point_labeler_gui.upsert_caption_entries(entries, [replacement])
 
         self.assertEqual(len(updated), 1)
-        self.assertEqual(updated[0]["caption"], "new caption")
+        self.assertEqual(updated[0]["captions"], ["new caption", "alternate caption"])
+
+    def test_upsert_caption_entries_keeps_same_image_context_annotations_separate(self) -> None:
+        entries = [
+            {
+                "action": "Dagging",
+                "action_slug": "Dagging",
+                "role": "test",
+                "rank": "1",
+                "object_category": "test1_01",
+                "annotation_id": "Dagging/tests/context_vqa/test1_01",
+                "dataset_image_path": "Dagging/tests/test1.png",
+                "captions": ["first description"],
+            }
+        ]
+        replacement = {
+            **entries[0],
+            "annotation_id": "Dagging/tests/context_vqa/test1_02",
+            "object_category": "test1_02",
+            "captions": ["second description"],
+        }
+
+        updated = point_labeler_gui.upsert_caption_entries(entries, [replacement])
+
+        self.assertEqual(len(updated), 2)
+        self.assertEqual(
+            [entry["captions"] for entry in updated],
+            [["first description"], ["second description"]],
+        )
+
+    def test_caption_text_uses_non_empty_lines_as_multiple_captions(self) -> None:
+        self.assertEqual(
+            point_labeler_gui.captions_from_text("first caption\n\n second caption "),
+            ["first caption", "second caption"],
+        )
+        self.assertEqual(
+            point_labeler_gui.caption_text_from_captions(["first", "second"]),
+            "first\nsecond",
+        )
 
 
 if __name__ == "__main__":
